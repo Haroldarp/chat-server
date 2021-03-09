@@ -39,9 +39,9 @@ end
 def list(socket)
     sender_key = @users.key(socket)
     if (@users.length > 1)
-        users_list = @users.select { |key, value| key != sender_key} 
+        users_list = @users.select { |key, value| key != sender_key}
         socket.puts "#{users_list.keys}"
     else
         socket.puts "EMPTY"
     end
-end 
+end
