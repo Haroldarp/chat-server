@@ -18,7 +18,7 @@ def chat(socket, params)
         if @users[username] != nil
             privateMessage(socket, username, message)
         else
-            socket.puts "INVALID USER"
+            socket.puts "NotFound"
         end
     end
 end
@@ -44,16 +44,16 @@ def list(socket)
         users_list = @users.select { |key, value| key != sender_key}
         socket.puts "#{users_list.keys}"
     else
-        socket.puts "EMPTY"
+        socket.puts "Empty"
     end
 end
 
 def login (socket, username)
     if @users[username] == nil
         @users[username] = socket
-        socket.puts "OK"
+        socket.puts "Ok"
     else
-        socket.puts "TAKEN"
+        socket.puts "Taken"
     end
 end
 
@@ -62,9 +62,9 @@ def logout (socket)
     delete = @users.delete(search_key)
 
     if delete == nil
-        socket.puts "ERROR"
+        socket.puts "Error"
     else
-        socket.puts "OK"
+        socket.puts "Ok"
         socket.close
     end
 end
@@ -92,7 +92,7 @@ loop do
                     params = commands[1].split("_", 2)
                     chat(socket, params)
 
-                when "/LIST"
+                when "/USERLIST"
                     list(socket)
 
                 when "/CLOSE"
