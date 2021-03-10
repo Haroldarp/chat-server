@@ -10,7 +10,7 @@ def chat(socket, params)
     if params.length() == 1
         message = params[0]
         broadcast(socket, message)
-    
+
     elsif params.length() == 2
         username = params[0]
         message = params[1]
@@ -19,6 +19,7 @@ def chat(socket, params)
             privateMessage(socket, username, message)
         else
             socket.puts "INVALID USER"
+        end
     end
 end
 
@@ -46,6 +47,7 @@ def list(socket)
         socket.puts "EMPTY"
     end
 end
+
 def login (socket, username)
     if @users[username] == nil
         @users[username] = socket
@@ -87,7 +89,7 @@ loop do
                     login(socket, username)
 
                 when "/CHAT"
-                    params = commands.split("_", 2)
+                    params = commands[1].split("_", 2)
                     chat(socket, params)
 
                 when "/LIST"
