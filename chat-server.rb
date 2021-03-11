@@ -26,6 +26,7 @@ def chat(socket, params)
 end
 
 def broadcast(socket, message)
+    socket.puts "Ok"
     sender_key = @users.key(socket)
     @users.each_value do |socket_value|
         if socket_value != socket
@@ -35,6 +36,7 @@ def broadcast(socket, message)
 end
 
 def privateMessage(socket, username, message)
+    socket.puts "Ok"
     sender_key = @users.key(socket)
     socket_receiver = @users[username]
     socket_receiver.puts "#{sender_key}: #{message}"
@@ -73,10 +75,10 @@ end
 
 loop do
     clientSocket = server.accept
+    puts "Se conecto un nuevo cliente!"
 
     Thread.new(clientSocket) do |socket|
         loop do
-            puts "Se conecto un nuevo cliente!"
             command = socket.gets.chomp
 
             if command.index(" ") != nil
