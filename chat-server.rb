@@ -9,7 +9,7 @@ puts "El servidor esta en modo listening!"
 def chat(socket, params)
 
     if params.length() == 1
-        message = params[0]
+        message = params[0][3..-1]
         broadcast(socket, message)
 
     elsif params.length() == 2
