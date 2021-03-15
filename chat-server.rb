@@ -2,6 +2,7 @@ require 'socket'
 
 port = 2000
 @users = {}
+@roomList = {}
 
 server = TCPServer.new(port)
 puts "El servidor esta en modo listening!"
@@ -52,6 +53,25 @@ def list(socket)
     end
 end
 
+def createRoom(socket, groupName)
+    search_key = @users.key(socket)
+    grupo = [search_key]
+    if  @roomList[groupName] == nil
+        @roomList[groupName] = grupo
+        socket.puts "Ok"
+
+    else
+        socket.puts "Taken" 
+    end
+   
+end
+
+def roomList (socket)
+    users_list =  @roomList
+    socket.puts "#{users_list.keys}"
+    socket.puts "Ok"
+end
+
 def login (socket, username)
     if @users[username] == nil
         @users[username] = socket
@@ -99,6 +119,13 @@ loop do
 
                 when "/USERLIST"
                     list(socket)
+
+                when "/ROOM"
+                    groupname = commands[1]
+                    createRoom(socket, groupname)
+
+                when "/ROOMLIST"
+                    roomList(socket)
 
                 when "/CLOSE"
                     logout(socket)
