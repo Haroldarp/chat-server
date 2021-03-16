@@ -127,8 +127,11 @@ def addRoom(socket, params)
                 if @requests.has_key?(groupname)
                     if @requests[groupname].include?(newMember)
                         # Accept request (owner)
-                        userList.push(newMember)
-                        @rooms[groupname] = userList
+                        if @rooms[groupname].kind_of?(Array)
+                            @rooms[groupname].push(newMember)
+                        else
+                            (@rooms[groupname] ||= userList).push(newMember)
+                        end
                         @requests[groupname].delete(newMember)
     
                         if @invites.has_key?(newMember)
@@ -140,19 +143,24 @@ def addRoom(socket, params)
                 else
                     # Make request (invite user)
                     if @users.has_key?(newMember)
-                        requestList.push(newMember)
-                        @requests[groupname] = requestList
+                        if @requests[groupname].kind_of?(Array)
+                            @requests[groupname].push(newMember)
+                        else
+                            (@requests[groupname] ||= userList).push(newMember)
+                        end
+
+                        if @invites.has_key?(newMember)
+                            inviteList = @invites[newMember]
+                        end
+
+                        if @invites[newMember].kind_of?(Array)
+                            @invites[newMember].push(groupname)
+                        else
+                            (@invites[newMember] ||= inviteList).push(groupname)
+                        end
                     end
                 end
                 $i+=1
-            end
-
-            for member in requestList
-                if @invites.has_key?(member)
-                    inviteList = @invites[member]
-                end
-                inviteList.push(groupname)
-                @invites[member] = inviteList
             end
 
             puts "#{@requests[groupname]}"
@@ -356,7 +364,6 @@ loop do
 
                 when "/ADD"
                     params = commands[1].split(" ")
-                    socket.print params
                     addRoom(socket, params)
 
                 when "/QUIT"
