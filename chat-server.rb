@@ -15,17 +15,18 @@ def chat(socket, params)
         broadcast(socket, message)
 
     elsif params.length() == 2
-        username = params[0][3..-1]
-        puts "#{username}"
+        name = params[0][3..-1]
         message = params[1]
 
-        if @users[username] != nil && params[0][1] == 'u'
-            privateMessage(socket, username, message)
-        elsif params[0][1] == 'g'
-            broadcast(socket, message)
+        if @users[name] != nil && params[0][1] == 'u'
+            privateMessage(socket, name, message)
+        elsif @roomList[name] != nil && params[0][1] == 'g'
+            groupBroadcast(socket, name, message)
         else
             socket.puts "NotFound"
         end
+    else
+        socket.puts "Error"
     end
 end
 
@@ -35,6 +36,16 @@ def broadcast(socket, message)
     @users.each_value do |socket_value|
         if socket_value != socket
             socket_value.puts "/MESSAGE #{sender_key} #{message}"
+        end
+    end
+end
+
+def groupBroadcast(socket, groupname, message)
+    socket.puts "Ok"
+    sender_key = @users.key(socket)
+    @roomList[groupname].each do |username|
+        if @users[username] != socket
+            @users[username].puts "/MESSAGE #{groupname}_#{sender_key} #{message}"
         end
     end
 end
@@ -73,14 +84,14 @@ def addRoom(socket, params)
 
         if @roomList[groupName] != nil
 
-            if params.length == 3
+            if params.length == 3 && @users.key(socket) == @roomList[groupName][0]
                 username = params[2]
                 newGroup = @roomList[groupName]
                 newGroup << username
                 @roomList[groupName] = newGroup
                 puts "#{@roomList[groupName]}"
                 socket.puts "Ok"
-            elsif params.length > 3
+            elsif params.length > 3 && @users.key(socket) == @roomList[groupName][0]
                 $i = 2
                 newGroup = @roomList[groupName]
                 while $i < params.length do
