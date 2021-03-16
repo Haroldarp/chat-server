@@ -1,10 +1,43 @@
 require 'socket'
 
-port = 2000
+port = 5000
+@debug = false
+runServer = false
 @users = {}
 @rooms = {}
 @invites = {}
 @requests = {}
+
+comand = gets.chomp()
+
+params = comand.split(" ")
+
+while !runServer
+    if params.length == 1 && params[0] == "Run-Server"
+            runServer = !runServer
+        
+    elsif params.length == 2 && params[0] == "Run-Server" && (params[1] == "-v" || params[1] == "--verbose")
+            debug = true
+            runServer = !runServer
+
+    elsif params.length == 3 && params[0] == "Run-Server" &&
+        (params[1] == "-p" || params[1] == "--port") && params[2] != nil
+            runServer = !runServer
+            port = params[2]
+
+    elsif params.length == 4 && params[0] == "Run-Server" &&
+        (params[1] == "-p" || params[1] == "--port") && params[2] != nil &&
+        (params[3] == "-v" || params[3] == "--verbose")
+            port = params[2]
+            debug = true
+            runServer = !runServer
+
+    else
+        puts "INVALID RUN COMAND"
+    end
+end
+
+puts "Esta en modo debug!" if @debug
 
 server = TCPServer.new(port)
 puts "El servidor esta en modo listening!"
