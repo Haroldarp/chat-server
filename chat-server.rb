@@ -8,16 +8,15 @@ runServer = false
 @invites = {}
 @requests = {}
 
-comand = gets.chomp()
-
-params = comand.split(" ")
-
 while !runServer
+    comand = gets.chomp()
+    params = comand.split(" ")
+
     if params.length == 1 && params[0] == "Run-Server"
             runServer = !runServer
         
     elsif params.length == 2 && params[0] == "Run-Server" && (params[1] == "-v" || params[1] == "--verbose")
-            debug = true
+            @debug = true
             runServer = !runServer
 
     elsif params.length == 3 && params[0] == "Run-Server" &&
@@ -29,11 +28,11 @@ while !runServer
         (params[1] == "-p" || params[1] == "--port") && params[2] != nil &&
         (params[3] == "-v" || params[3] == "--verbose")
             port = params[2]
-            debug = true
+            @debug = true
             runServer = !runServer
 
     else
-        puts "INVALID RUN COMAND"
+        puts "INVALID RUN COMMAND"
     end
 end
 
@@ -152,8 +151,6 @@ def makeRequest(socket, groupname, newMember)
         else
             (@invites[newMember] ||= inviteList).push(groupname)
         end
-    else
-        socket.puts "Error"
     end
 end
 
@@ -171,8 +168,8 @@ def addRoom(socket, params)
                 while $i < params.length do
                     if @users.has_key?(params[$i])
                         room_members << params[$i]
-                        $i +=1
                     end
+                    $i +=1
                 end
                 @rooms[groupName] = room_members
                 puts "#{@rooms[groupName]}"
@@ -193,7 +190,6 @@ def addRoom(socket, params)
             $i = 1
             while $i < params.length do
                 newMember = params[$i]
-                socket.puts "#{newMember}"
 
                 if @requests.has_key?(groupname)
                     if @requests[groupname].include?(newMember)
@@ -321,10 +317,10 @@ end
 
 def reject(socket, groupname)
     sender_key = @users.key(socket)
-    if rooms.has_key?(groupname) && @requests[groupname].include?(sender_key)
+    if @rooms.has_key?(groupname) && @requests[groupname].include?(sender_key)
         @requests[groupname].delete(sender_key)
 
-        owner = rooms[groupname][0]
+        owner = @rooms[groupname][0]
         @users[owner].puts "/ROOMREJECT #{sender_key} reject"
 
         @requests[groupname].delete(sender_key)
@@ -420,7 +416,7 @@ loop do
 
                 when "/REJECT"
                     groupname = commands[1]
-                    reject(socket, groupName)
+                    reject(socket, groupname)
 
                 when "/CLOSE"
                     logout(socket)
