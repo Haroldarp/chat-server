@@ -45,9 +45,8 @@ end
 
 def list(socket)
     sender_key = @users.key(socket)
-    if (@users.length > 1)
-        users_list = @users.select { |key, value| key != sender_key}
-        socket.puts "#{users_list.keys}"
+    if (@users.length >= 1)
+        socket.puts "#{@users.keys}"
     else
         socket.puts "Empty"
     end
@@ -67,9 +66,12 @@ def createRoom(socket, groupName)
 end
 
 def roomList (socket)
-    users_list =  @roomList
-    socket.puts "#{users_list.keys}"
-    socket.puts "Ok"
+    if @roomList.length > 1
+        socket.puts "#{@roomList.keys}"
+        socket.puts "Ok"
+    else
+        socket.puts "Error"
+    end
 end
 
 def login (socket, username)
