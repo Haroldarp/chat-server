@@ -3,6 +3,7 @@ require 'socket'
 port = 2000
 @users = {}
 @roomList = {}
+@invites = {}
 
 server = TCPServer.new(port)
 puts "El servidor esta en modo listening!"
@@ -18,8 +19,10 @@ def chat(socket, params)
         puts "#{username}"
         message = params[1]
 
-        if @users[username] != nil
+        if @users[username] != nil && params[0][1] == 'u'
             privateMessage(socket, username, message)
+        elsif params[0][1] == 'g'
+            broadcast(socket, message)
         else
             socket.puts "NotFound"
         end
@@ -62,7 +65,42 @@ def createRoom(socket, groupName)
     else
         socket.puts "Taken" 
     end
-   
+    
+end
+
+#Hay que probar
+def addRoom(groupName, username, params)
+    if @roomList[groupName] != nil
+        if params.length < 2
+            newGroup = @roomList[groupName]
+            newGroup << username
+            @roomList[groupName] = newGroup
+            socket.puts "Ok"
+        else
+            sock = @users[username]
+            @invites[username] = groupName
+            newGroup = @roomList[groupName]
+            if sock.gets.chomp = "y"
+                newGroup << username
+                socket.puts "Ok"
+            end
+        end
+    end
+end
+
+#Hay que probar
+def join(socket, groupName)
+    user = @users.key(socket)
+    newGroup = @roomList[groupName]
+    newGroup << user
+    @roomList[groupName] = newGroup
+    socket.puts "Ok"
+end
+
+#Hay que probar
+def reject(socket, groupName)
+    user = @users.key(socket)
+    @invites.delete(user)
 end
 
 def roomList (socket)
@@ -116,7 +154,7 @@ loop do
                     login(socket, username)
 
                 when "/CHAT"
-                    params = commands[1].split("_-m ", 2)
+                    params = commands[1].split("-m ", 2)
                     chat(socket, params)
 
                 when "/USERLIST"
@@ -128,6 +166,16 @@ loop do
 
                 when "/ROOMLIST"
                     roomList(socket)
+
+                when "/ADD"
+                    params = commands.split("-f")
+                    addRoom(groupName, username, params)
+
+                when "/JOIN"
+                    join(socket, groupName)
+
+                when "/REJECT"
+                    reject(socket, groupName)
 
                 when "/CLOSE"
                     logout(socket)
