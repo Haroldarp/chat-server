@@ -79,6 +79,46 @@ def createRoom(socket, groupName)
 
 end
 
+def acceptRequest(groupname, newMember)
+    # Accept request (owner)
+    if @rooms[groupname].kind_of?(Array)
+        @rooms[groupname].push(newMember)
+    else
+        (@rooms[groupname] ||= []).push(newMember)
+    end
+    @requests[groupname].delete(newMember)
+
+    if @invites.has_key?(newMember)
+        if @invites[newMember].include?(groupname)
+            @invites[newMember].delete(groupname)
+        end
+    end
+end
+
+def makeRequest(socket, groupname, newMember)
+      # Make request (invite user)
+      inviteList = []
+      if @users.has_key?(newMember)
+        if @requests[groupname].kind_of?(Array)
+            @requests[groupname].push(newMember)
+        else
+            (@requests[groupname] ||= []).push(newMember)
+        end
+
+        if @invites.has_key?(newMember)
+            inviteList = @invites[newMember]
+        end
+
+        if @invites[newMember].kind_of?(Array)
+            @invites[newMember].push(groupname)
+        else
+            (@invites[newMember] ||= inviteList).push(groupname)
+        end
+    else
+        socket.puts "Error"
+    end
+end
+
 #Hay que probar
 def addRoom(socket, params)
     if params[0] == "-f"
@@ -123,42 +163,16 @@ def addRoom(socket, params)
 
             while $i < params.length do
                 newMember = params[$i]
+                socket.puts "#{newMember}"
 
                 if @requests.has_key?(groupname)
                     if @requests[groupname].include?(newMember)
-                        # Accept request (owner)
-                        if @rooms[groupname].kind_of?(Array)
-                            @rooms[groupname].push(newMember)
-                        else
-                            (@rooms[groupname] ||= userList).push(newMember)
-                        end
-                        @requests[groupname].delete(newMember)
-    
-                        if @invites.has_key?(newMember)
-                            if @invites[newMember].include?(groupname)
-                                @invites[newMember].delete(groupname)
-                            end
-                        end
+                        acceptRequest(groupname, newMember)
+                    else
+                        makeRequest(socket, groupname, newMember)
                     end
                 else
-                    # Make request (invite user)
-                    if @users.has_key?(newMember)
-                        if @requests[groupname].kind_of?(Array)
-                            @requests[groupname].push(newMember)
-                        else
-                            (@requests[groupname] ||= userList).push(newMember)
-                        end
-
-                        if @invites.has_key?(newMember)
-                            inviteList = @invites[newMember]
-                        end
-
-                        if @invites[newMember].kind_of?(Array)
-                            @invites[newMember].push(groupname)
-                        else
-                            (@invites[newMember] ||= inviteList).push(groupname)
-                        end
-                    end
+                  makeRequest(socket, groupname, newMember)
                 end
                 $i+=1
             end
