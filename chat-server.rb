@@ -97,12 +97,17 @@ end
 
 def makeRequest(socket, groupname, newMember)
       # Make request (invite user)
-      inviteList = []
-      if @users.has_key?(newMember)
+    inviteList = []
+    requestList = []
+    if @requests.has_key?(groupname)
+        requestList = @requests[groupname]
+    end
+
+    if @users.has_key?(newMember)
         if @requests[groupname].kind_of?(Array)
             @requests[groupname].push(newMember)
         else
-            (@requests[groupname] ||= []).push(newMember)
+            (@requests[groupname] ||= requestList).push(newMember)
         end
 
         if @invites.has_key?(newMember)
@@ -153,14 +158,6 @@ def addRoom(socket, params)
 
         if params.length > 1 && sender_key == room_members[0]
             $i = 1
-            inviteList = []
-            requestList = []
-            userList = []
-
-            if @requests.has_key?(groupname)
-                requestList = @requests[groupname]
-            end
-
             while $i < params.length do
                 newMember = params[$i]
                 socket.puts "#{newMember}"
