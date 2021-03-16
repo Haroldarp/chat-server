@@ -34,7 +34,7 @@ def broadcast(socket, message)
     sender_key = @users.key(socket)
     @users.each_value do |socket_value|
         if socket_value != socket
-            socket_value.puts "#{sender_key}: #{message}"
+            socket_value.puts "/MESSAGE #{sender_key} #{message}"
         end
     end
 end
@@ -43,11 +43,10 @@ def privateMessage(socket, username, message)
     socket.puts "Ok"
     sender_key = @users.key(socket)
     socket_receiver = @users[username]
-    socket_receiver.puts "#{sender_key}: #{message}"
+    socket_receiver.puts "/MESSAGE #{sender_key} #{message}"
 end
 
 def list(socket)
-    sender_key = @users.key(socket)
     if (@users.length >= 1)
         socket.puts "#{@users.keys}"
     else
@@ -61,7 +60,6 @@ def createRoom(socket, groupName)
     if  @roomList[groupName] == nil
         @roomList[groupName] = grupo
         socket.puts "Ok"
-
     else
         socket.puts "Taken" 
     end
@@ -69,23 +67,56 @@ def createRoom(socket, groupName)
 end
 
 #Hay que probar
-def addRoom(groupName, username, params)
-    if @roomList[groupName] != nil
-        if params.length < 2
-            newGroup = @roomList[groupName]
-            newGroup << username
-            @roomList[groupName] = newGroup
-            socket.puts "Ok"
-        else
-            sock = @users[username]
-            @invites[username] = groupName
-            newGroup = @roomList[groupName]
-            if sock.gets.chomp = "y"
+def addRoom(socket, params)
+    if params[0] == "-f"
+        groupName = params[1]
+
+        if @roomList[groupName] != nil
+
+            if params.length == 3
+                username = params[2]
+                newGroup = @roomList[groupName]
                 newGroup << username
+                @roomList[groupName] = newGroup
+                puts "#{@roomList[groupName]}"
                 socket.puts "Ok"
+            elsif params.length > 3
+                $i = 2
+                newGroup = @roomList[groupName]
+                while $i < params.length do
+                    newGroup << params[$i]
+                    $i +=1
+                end
+                @roomList[groupName] = newGroup
+                puts "#{@roomList[groupName]}"
+                socket.puts "Ok"
+            else
+                socket.puts "Error"
             end
+
+        else
+            socket.puts "NotFound"
         end
+    else
+        socket.puts "no -f"
+
     end
+    # if @roomList[groupName] != nil
+    #     if params.length < 2
+    #         newGroup = @roomList[groupName]
+    #         newGroup << username
+    #         @roomList[groupName] = newGroup
+    #         socket.puts "Ok"
+    #     else
+    #         sock = @users[username]
+    #         @invites[username] = groupName
+    #         newGroup = @roomList[groupName]
+    #         if sock.gets.chomp = "y"
+    #             newGroup << username
+    #             socket.puts "Ok"
+    #         end
+    #     end
+    # end
 end
 
 #Hay que probar
@@ -104,7 +135,7 @@ def reject(socket, groupName)
 end
 
 def roomList (socket)
-    if @roomList.length > 1
+    if @roomList.length >= 1
         socket.puts "#{@roomList.keys}"
         socket.puts "Ok"
     else
@@ -154,7 +185,7 @@ loop do
                     login(socket, username)
 
                 when "/CHAT"
-                    params = commands[1].split("-m ", 2)
+                    params = commands[1].split(" -m ", 2)
                     chat(socket, params)
 
                 when "/USERLIST"
@@ -168,8 +199,8 @@ loop do
                     roomList(socket)
 
                 when "/ADD"
-                    params = commands.split("-f")
-                    addRoom(groupName, username, params)
+                    params = commands[1].split(" ")
+                    addRoom(socket, params)
 
                 when "/JOIN"
                     join(socket, groupName)
