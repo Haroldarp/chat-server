@@ -130,6 +130,36 @@ def addRoom(socket, params)
     # end
 end
 
+def quitRoom(socket, groupname)
+    sender_key = @users.key(socket)
+
+    if @roomList[groupname] != nil
+        if sender_key == @roomList[groupname][0]
+            @roomList[groupname].each do |username|
+                if @users[username] != socket
+                    @users[username].puts "/ROOMQUIT #{sender_key} deleted #{groupname}"
+                end
+            end
+            @roomList.delete(groupname)
+            socket.puts "Ok"
+
+        elsif @roomList[groupname].include?(sender_key)
+            @roomList[groupname].each do |username|
+                if @users[username] != socket
+                    @users[username].puts "/ROOMQUIT #{sender_key} left #{groupname}"
+                end
+            end
+            @roomList[groupname].delete(sender_key)
+            socket.puts "Ok"
+
+        else    
+            socket.puts "NotInRoom"
+        end
+    else
+        socket.puts "Error"
+    end
+end
+
 #Hay que probar
 def join(socket, groupName)
     user = @users.key(socket)
@@ -212,6 +242,10 @@ loop do
                 when "/ADD"
                     params = commands[1].split(" ")
                     addRoom(socket, params)
+
+                when "/QUIT"
+                    groupname = commands[1]
+                    quitRoom(socket, groupname)
 
                 when "/JOIN"
                     join(socket, groupName)
