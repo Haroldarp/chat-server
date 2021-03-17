@@ -1,11 +1,42 @@
 require 'socket'
 
-port = 2000
+port = 5000
+@debug = false
+runServer = false
 @users = {}
 @grouplist = {}
 @invites = {}
 @requests = {}
 
+while !runServer
+    command = gets.chomp()
+    params = command.split(" ")
+
+    if params.length == 1 && params[0] == "Run-Server"
+        runServer = !runServer
+
+    elsif params.length == 2 && params[0] == "Run-Server" && (params[1] == "-v" || params[1] == "--verbose")
+        @debug = true
+        runServer = !runServer
+
+    elsif params.length == 3 && params[0] == "Run-Server" && 
+        (params[1] == "-p" || params[1] == "--port") && params[2] != nil
+        port = params[2]
+        runServer = !runServer
+
+    elsif params.length == 4 && params[0] == "Run-Server" && 
+        (params[1] == "-p" || params[1] == "--port") && params[2] != nil &&
+        (params[3] == "-v" || params[3] == "--verbose")
+        port = params[2]
+        @debug = true
+        runServer = !runServer
+
+    else
+        puts "INVALID RUN COMMAD"
+    end
+end
+
+puts "Running in debug mode" if @debug
 server = TCPServer.new(port)
 puts "El servidor esta en modo listening!"
 
@@ -16,12 +47,13 @@ def chat(socket, params)
         broadcast(socket, message)
 
     elsif params.length() == 2
-        username = params[0][3..-1]
-        puts "#{username}"
+        name = params[0][3..-1]
         message = params[1]
 
-        if @users[username] != nil
-            privateMessage(socket, username, message)
+        if @users[name] != nil && params[0][1] == "u"
+            privateMessage(socket, name, message)
+        elsif @grouplist[name] != nil && params[0][1] == "g"
+            groupBroadcast(socket, name, message)
         else
             socket.puts "NotFound"
         end
@@ -33,7 +65,16 @@ def broadcast(socket, message)
     sender_key = @users.key(socket)
     @users.each_value do |socket_value|
         if socket_value != socket
-            socket_value.puts "#{sender_key}: #{message}"
+            socket_value.puts "/MESSAGE #{sender_key} #{message}"
+        end
+    end
+end
+
+def groupBroadcast(socket, groupname, message)
+    sender_key = @users.key(socket)
+    @grouplist[groupname].each do |username|
+        if @users[username] != socket
+            @users[username].puts "/MESSAGE #{groupname}_#{sender_key} #{message}"
         end
     end
 end
@@ -66,7 +107,7 @@ def join(socket, groupname)
             requestlist = []
             requestlist << sender_key
             @requests[groupname] = requestlist
-            @users[]owner.puts "/ROOMJOIN #{sender_key} request-to-join #{groupname}"
+            @users[owner].puts "/ROOMJOIN #{sender_key} request-to-join #{groupname}"
         end
     else
         socket.puts "NotFound"
@@ -90,14 +131,14 @@ def reject(socket, groupname)
 end
 
 def requestlist(socket, groupname)
-    sender_key =@users.key(socket)
+    sender_key = @users.key(socket)
 
     if @grouplist.has_key?(groupname)
         room_members = @grouplist[groupname]
         if sender_key == room_members[0]
             if @requests.has_key?(groupname)
                 if (!@requests[groupname].empty?)
-                    socke.puts "#{@requests[groupname].inspect}"
+                    socket.puts "#{@requests[groupname].inspect}"
                 else
                     socket.puts "Error"
                 end
@@ -112,11 +153,40 @@ def requestlist(socket, groupname)
     end
 end
 
+def quitRoom(socket, groupname)
+    sender_key = @users.key(socket);
+
+    if @grouplist[groupname] != nil
+        if sender_key == @grouplist[groupname][0]
+            @grouplist[groupname].each do |username|
+                if @users[username] != socket
+                    @users[username].puts "/ROOMQUIT #{sender_key} deleted #{groupname}"
+                end
+            end
+            @grouplist.delete(groupname)
+            socket.puts "ok"
+
+        elsif @grouplist[groupname].include?(sender_key)
+            @grouplist[groupname].each do |username|
+                if @users[username] != socket
+                    @users[username].puts "/ROOMQUIT #{sender_key} left #{groupname}"
+                end
+            end
+            @grouplist[groupname].delete(groupname)
+            socket.puts "ok"
+        else
+            socket.puts "NotInRoom"
+        end
+    else
+        socket.puts "Error"
+    end
+end
+
 def privateMessage(socket, username, message)
     socket.puts "Ok"
     sender_key = @users.key(socket)
     socket_receiver = @users[username]
-    socket_receiver.puts "#{sender_key}: #{message}"
+    socket_receiver.puts "/MESSAGE #{sender_key} #{message}"
 end
 
 def list(socket)
@@ -130,8 +200,7 @@ def list(socket)
 end
 
 def createRoom (socket, groupName)
-
-    search_key = @user.keys(socket)
+    search_key = @users.key(socket)
     grupo = []
     grupo << search_key
     if @grouplist[groupName] == nil
@@ -261,11 +330,11 @@ def inviteList (socket)
     sender_key = @users.key(socket)
 
     if @invites.has_key?(sender_key)
-        if @invite[sender_key].empty?
+        if @invites[sender_key].empty?
             socket.puts "Empty"
 
         else
-        socket.puts "#{@invites[sender_key]}"
+            socket.puts "#{@invites[sender_key].inspect}"
         end
     else
         socket.puts "Empty"
@@ -314,7 +383,7 @@ loop do
                     login(socket, username)
 
                 when "/CHAT"
-                    params = commands[1].split("_-m ", 2)
+                    params = commands[1].split(" -m ", 2)
                     chat(socket, params)
 
                 when "/ROOM"
@@ -335,6 +404,10 @@ loop do
                 when "/REJECT"
                     groupname = commands[1]
                     reject(socket, groupname)
+
+                when "/QUIT"
+                    groupname = commands[1]
+                    quitRoom(socket, groupname)
 
                 when "/REQUESTLIST"
                     groupname = commands[1]
