@@ -169,10 +169,10 @@ def addRoom(socket, params)
                 socket.puts "Ok"
 
             else
-                socket.puts "Error"
+                socket.puts "NoOwner"
             end
         else 
-            socket.puts "NotFound"
+            socket.puts "RoomNotFound"
         end
     
     else
@@ -285,7 +285,7 @@ def quitRoom(socket, groupname)
                 end
             end
             @rooms.delete(groupname)
-            socket.puts "ok"
+            socket.puts "Ok"
 
         elsif @rooms[groupname].include?(sender_key)
             @rooms[groupname].each do |username|
@@ -294,7 +294,7 @@ def quitRoom(socket, groupname)
                 end
             end
             @rooms[groupname].delete(sender_key)
-            socket.puts "ok"
+            socket.puts "Ok"
         else
             socket.puts "NotInRoom"
         end
